@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState, FormEvent, ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/app/_utils/firebase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -13,9 +16,11 @@ type LoginFormData = {
 type LoginErrors = {
   email?: string;
   password?: string;
+  general?: string;
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -24,6 +29,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<LoginErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (email: string) => {
     if (!email.trim()) return "Email is required.";
@@ -54,21 +60,61 @@ export default function LoginPage() {
 
     if (submitted) {
       const newErrors = { ...errors };
-
       if (id === "email") newErrors.email = validateEmail(value);
       if (id === "password") newErrors.password = validatePassword(value);
-
+      if (newErrors.general) delete newErrors.general;
       setErrors(newErrors);
     }
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitted(true);
+    setErrors({});
 
     if (!validateForm()) return;
 
-    console.log("Login submitted:", formData);
+    setIsLoading(true);
+
+    try {
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      
+      console.log("Logged in user:", userCredential.user);
+      
+      // Redirect to dashboard or home page after successful login
+      router.push("/dashboard"); // or router.push("/") for home page
+      
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Handle specific Firebase errors
+      switch (error.code) {
+        case 'auth/user-not-found':
+          setErrors({ general: "No account found with this email address." });
+          break;
+        case 'auth/wrong-password':
+          setErrors({ general: "Incorrect password. Please try again." });
+          break;
+        case 'auth/invalid-email':
+          setErrors({ general: "Invalid email address format." });
+          break;
+        case 'auth/user-disabled':
+          setErrors({ general: "This account has been disabled. Please contact support." });
+          break;
+        case 'auth/too-many-requests':
+          setErrors({ general: "Too many failed attempts. Please try again later." });
+          break;
+        default:
+          setErrors({ general: "Failed to log in. Please check your credentials and try again." });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -168,6 +214,12 @@ export default function LoginPage() {
                   )}
                 </div>
 
+                {errors.general && (
+                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                    {errors.general}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between text-sm">
                   <Link
                     href="/login/forgot-password"
@@ -179,14 +231,25 @@ export default function LoginPage() {
 
                 <button
                   type="submit"
-                  className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                  disabled={isLoading}
+                  className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Log In
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Logging in...
+                    </div>
+                  ) : (
+                    "Log In"
+                  )}
                 </button>
               </form>
 
               <p className="mt-6 text-center text-sm text-slate-600">
-                Don’t have an account?{" "}
+                Don't have an account?{" "}
                 <Link
                   href="/signup"
                   className="font-semibold text-blue-600 hover:underline"

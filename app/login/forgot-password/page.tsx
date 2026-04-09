@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/app/_utils/firebase";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -27,11 +28,26 @@ export default function ForgotPasswordPage() {
     setError("");
     
     try {
-      // TODO: Implement Firebase password reset in Sprint 2
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Send password reset email with Firebase
+      await sendPasswordResetEmail(auth, email);
       setIsSubmitted(true);
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      console.error("Password reset error:", err);
+      
+      // Handle specific Firebase errors
+      switch (err.code) {
+        case 'auth/user-not-found':
+          setError("No account found with this email address.");
+          break;
+        case 'auth/invalid-email':
+          setError("Invalid email address format.");
+          break;
+        case 'auth/too-many-requests':
+          setError("Too many requests. Please try again later.");
+          break;
+        default:
+          setError("Something went wrong. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

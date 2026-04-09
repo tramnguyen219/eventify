@@ -1,8 +1,49 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { auth } from "@/app/_utils/firebase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function HomePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
+        <Navbar />
+        <div className="flex min-h-[calc(100vh-140px)] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
       <Navbar />
@@ -24,18 +65,40 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Link
-              href="/signup"
-              className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
-            >
-              Get Started
-            </Link>
-            <Link
-              href="/events"
-              className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Browse Events
-            </Link>
+            {user ? (
+              <>
+                <div className="rounded-lg bg-white px-6 py-3 shadow-sm ring-1 ring-slate-200">
+                  <p className="text-sm text-slate-600">
+                    Welcome back,{" "}
+                    <span className="font-semibold text-slate-900">
+                      {user.displayName || user.email?.split('@')[0]}
+                    </span>
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                >
+                  Go to Dashboard
+                </Link>
+              
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                >
+                  Get Started
+                </Link>
+                <Link
+                  href="/events"
+                  className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Browse Events
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -106,6 +169,24 @@ export default function HomePage() {
               </p>
             </article>
           </div>
+
+          {/* Personalized section for logged-in users */}
+          {user && (
+            <div className="mt-12 rounded-3xl bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold">Ready to create your first event?</h3>
+                <p className="mt-2 text-blue-100">
+                  Start organizing events and managing attendees right away.
+                </p>
+                <Link
+                  href="/dashboard/organizer"
+                  className="mt-6 inline-block rounded-full bg-white px-8 py-3 font-semibold text-blue-600 transition-all hover:bg-slate-100"
+                >
+                  Create Event
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
