@@ -1,159 +1,143 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { onAuthStateChanged, User, updateProfile } from "firebase/auth";
-import { auth } from "@/app/_utils/firebase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+const upcomingEvents = [
+  {
+    id: 1,
+    title: "Future Innovators Summit",
+    date: "April 18, 2026",
+    location: "Calgary, AB",
+    status: "Confirmed",
+  },
+  {
+    id: 2,
+    title: "Business Networking Night",
+    date: "May 2, 2026",
+    location: "Calgary, AB",
+    status: "Confirmed",
+  },
+];
+
+const savedEvents = [
+  {
+    id: 3,
+    title: "Creative Design Workshop",
+    date: "April 22, 2026",
+    location: "Edmonton, AB",
+  },
+  {
+    id: 4,
+    title: "Student Career Expo",
+    date: "May 15, 2026",
+    location: "Calgary, AB",
+  },
+];
+
 export default function AttendeeDashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const [updating, setUpdating] = useState(false);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
-        setUser(currentUser);
-        setDisplayName(currentUser.displayName || "");
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    
-    setUpdating(true);
-    setMessage("");
-    
-    try {
-      await updateProfile(user, { displayName });
-      setUser({ ...user, displayName });
-      setIsEditing(false);
-      setMessage("Profile updated successfully!");
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
-      setMessage("Failed to update profile. Please try again.");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-        <Navbar />
-        <div className="flex min-h-[calc(100vh-140px)] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-        </div>
-        <Footer />
-      </main>
-    );
-  }
-
-  if (!user) return null;
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
       <Navbar />
-      
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
-            ← Back to Dashboard
-          </Link>
-          <h1 className="mt-4 text-3xl font-bold text-slate-900">My Profile</h1>
-          <p className="mt-2 text-slate-600">Manage your personal information</p>
+
+      <section className="mx-auto max-w-7xl px-6 py-12">
+        <div className="mb-10">
+          <p className="mb-3 inline-block rounded-full bg-blue-100 px-4 py-1 text-sm font-medium text-blue-700">
+            Attendee Dashboard
+          </p>
+          <h1 className="text-4xl font-bold text-slate-900">Welcome back</h1>
+          <p className="mt-3 text-slate-600">
+            View your upcoming events, saved events, and bookings in one place.
+          </p>
         </div>
 
-        {/* Profile Card */}
-        <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-          {message && (
-            <div className="mb-6 rounded-lg bg-green-50 p-3 text-sm text-green-600">
-              {message}
-            </div>
-          )}
-          
-          {!isEditing ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-600">Email</label>
-                  <p className="mt-1 text-slate-900">{user.email}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-600">Display Name</label>
-                  <p className="mt-1 text-slate-900">{user.displayName || "Not set"}</p>
-                </div>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Edit
-                </button>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-slate-600">Account Created</label>
-                <p className="mt-1 text-slate-900">
-                  {user.metadata.creationTime 
-                    ? new Date(user.metadata.creationTime).toLocaleDateString()
-                    : "Unknown"}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleUpdateProfile} className="space-y-6">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="Enter your display name"
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={updating}
-                  className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {updating ? "Saving..." : "Save Changes"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="rounded-lg border border-slate-300 px-6 py-2 font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <p className="text-sm text-slate-500">Upcoming Events</p>
+            <h2 className="mt-3 text-3xl font-bold text-slate-900">2</h2>
+          </div>
+
+          <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <p className="text-sm text-slate-500">Saved Events</p>
+            <h2 className="mt-3 text-3xl font-bold text-slate-900">2</h2>
+          </div>
+
+          <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <p className="text-sm text-slate-500">Active Bookings</p>
+            <h2 className="mt-3 text-3xl font-bold text-slate-900">2</h2>
+          </div>
         </div>
-      </div>
-      
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-2">
+          <div>
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">Upcoming Events</h2>
+
+            <div className="grid gap-5">
+              {upcomingEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200"
+                >
+                  <h3 className="text-2xl font-bold text-slate-900">{event.title}</h3>
+                  <div className="mt-3 space-y-2 text-sm text-slate-600">
+                    <p>{event.date}</p>
+                    <p>{event.location}</p>
+                    <p>Status: {event.status}</p>
+                  </div>
+
+                  <div className="mt-6 flex gap-3">
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                      View Event
+                    </Link>
+
+                    <Link
+                      href="/dashboard/bookings"
+                      className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      Manage Booking
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">Saved Events</h2>
+
+            <div className="grid gap-5">
+              {savedEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200"
+                >
+                  <h3 className="text-2xl font-bold text-slate-900">{event.title}</h3>
+                  <div className="mt-3 space-y-2 text-sm text-slate-600">
+                    <p>{event.date}</p>
+                    <p>{event.location}</p>
+                  </div>
+
+                  <div className="mt-6 flex gap-3">
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                    >
+                      View Details
+                    </Link>
+
+                    <button className="rounded-full border border-red-300 px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </main>
   );
