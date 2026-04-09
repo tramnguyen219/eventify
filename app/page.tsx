@@ -1,30 +1,11 @@
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-2xl font-bold tracking-tight text-slate-900">
-            Eventify
-          </Link>
-
-          <div className="hidden items-center gap-6 md:flex">
-            <Link href="/events" className="text-sm font-medium hover:text-blue-600">
-              Events
-            </Link>
-            <Link href="/login" className="text-sm font-medium hover:text-blue-600">
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700"
-            >
-              Sign Up
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <Navbar />
 
       <section className="mx-auto grid max-w-7xl gap-12 px-6 py-20 md:grid-cols-2 md:items-center">
         <div>
@@ -37,9 +18,9 @@ export default function HomePage() {
           </h1>
 
           <p className="mb-8 max-w-xl text-lg leading-8 text-slate-600">
-            Eventify is a web-based event booking platform that helps organizers create and manage
-            events while allowing attendees to easily browse, register, and manage their bookings
-            all in one place.
+            Eventify is a web-based event booking platform that helps organizers create
+            and manage events while allowing attendees to easily browse, register, and
+            manage their bookings all in one place.
           </p>
 
           <div className="flex flex-wrap gap-4">
@@ -63,13 +44,16 @@ export default function HomePage() {
             <h2 className="mb-4 text-xl font-semibold text-slate-900">Upcoming Event</h2>
             <div className="rounded-2xl bg-slate-100 p-5">
               <p className="text-sm font-medium text-blue-600">Tech Conference</p>
-              <h3 className="mt-2 text-2xl font-bold text-slate-900">How Is AI Transforming Modern Enterprise Operations?</h3>
+              <h3 className="mt-2 text-2xl font-bold text-slate-900">Future Innovators Summit</h3>
               <p className="mt-3 text-sm text-slate-600">
                 April 18, 2026 • Calgary • 120 seats available
               </p>
-              <button className="mt-5 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+              <Link
+                href="/events/1"
+                className="mt-5 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+              >
                 View Details
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -91,7 +75,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="features" className="bg-slate-50 py-20">
+      <section className="bg-slate-50 py-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">Why choose Eventify?</h2>
@@ -124,7 +108,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-  
+
+      <Footer />
     </main>
   );
 }

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, FormEvent, ChangeEvent } from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 type FormData = {
   fullName: string;
@@ -48,7 +50,7 @@ export default function SignUpPage() {
     if (password.length < 8) return "Password must be at least 8 characters.";
     if (!/[A-Za-z]/.test(password)) return "Password must include at least one letter.";
     if (!/\d/.test(password)) return "Password must include at least one number.";
-    if (!/[!@#$%^&*(),.?":{}|<>_\-\\/\[\]=+;'`~]/.test(password)) {
+    if (!/[!@#$%^&*(),.?":{}|<>_\-\\/[\]=+;'`~]/.test(password)) {
       return "Password must include at least one symbol.";
     }
     return "";
@@ -83,13 +85,8 @@ export default function SignUpPage() {
     if (submitted) {
       const newErrors = { ...errors };
 
-      if (id === "fullName") {
-        newErrors.fullName = validateName(value);
-      }
-
-      if (id === "email") {
-        newErrors.email = validateEmail(value);
-      }
+      if (id === "fullName") newErrors.fullName = validateName(value);
+      if (id === "email") newErrors.email = validateEmail(value);
 
       if (id === "password") {
         newErrors.password = validatePassword(value);
@@ -121,15 +118,13 @@ export default function SignUpPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
-      <section className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-12">
+      <Navbar />
+
+      <section className="mx-auto flex min-h-[calc(100vh-140px)] max-w-7xl items-center justify-center px-6 py-12">
         <div className="grid w-full max-w-6xl overflow-hidden rounded-[32px] bg-white shadow-xl ring-1 ring-slate-200 md:grid-cols-2">
           <div className="flex flex-col justify-between bg-slate-900 p-10 text-white">
             <div>
-              <Link href="/" className="text-2xl font-bold tracking-tight">
-                Eventify
-              </Link>
-
-              <p className="mt-6 inline-block rounded-full bg-white/10 px-4 py-1 text-sm font-medium text-blue-200">
+              <p className="mt-2 inline-block rounded-full bg-white/10 px-4 py-1 text-sm font-medium text-blue-200">
                 Create your account
               </p>
 
@@ -268,9 +263,7 @@ export default function SignUpPage() {
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 hover:text-slate-700"
                     >
                       {showConfirmPassword ? "Hide" : "Show"}
@@ -313,6 +306,8 @@ export default function SignUpPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </main>
   );
 }
