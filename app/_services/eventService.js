@@ -1,15 +1,15 @@
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  getDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  query, 
+  where, 
+  orderBy, 
+  Timestamp 
 } from "firebase/firestore";
 import { db } from "@/app/_utils/firebase";
 
@@ -114,17 +114,17 @@ export async function createBooking(bookingData, userId, eventId) {
       status: "confirmed",
     };
     const docRef = await addDoc(bookingsCollection, booking);
-
-    // Update event booked seats count
+    
+    // Update event booked seats
     const eventRef = doc(db, "events", eventId);
     const eventDoc = await getDoc(eventRef);
     if (eventDoc.exists()) {
       const currentBooked = eventDoc.data().bookedSeats || 0;
       await updateDoc(eventRef, {
-        bookedSeats: currentBooked + (bookingData.tickets ?? 1),
+        bookedSeats: currentBooked + bookingData.tickets
       });
     }
-
+    
     return { id: docRef.id, ...booking };
   } catch (error) {
     console.error("Error creating booking:", error);
@@ -138,13 +138,14 @@ export async function getUserBookings(userId) {
     const q = query(bookingsCollection, where("userId", "==", userId), orderBy("bookingDate", "desc"));
     const querySnapshot = await getDocs(q);
     const bookings = [];
-
+    
     for (const bookingDoc of querySnapshot.docs) {
       const booking = { id: bookingDoc.id, ...bookingDoc.data() };
+      // Get event details for each booking
       const event = await getEventById(booking.eventId);
       bookings.push({ ...booking, event });
     }
-
+    
     return bookings;
   } catch (error) {
     console.error("Error fetching user bookings:", error);
@@ -157,17 +158,17 @@ export async function cancelBooking(bookingId, eventId, tickets) {
   try {
     const bookingRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingRef, { status: "cancelled" });
-
-    // Update event booked seats count
+    
+    // Update event booked seats
     const eventRef = doc(db, "events", eventId);
     const eventDoc = await getDoc(eventRef);
     if (eventDoc.exists()) {
       const currentBooked = eventDoc.data().bookedSeats || 0;
       await updateDoc(eventRef, {
-        bookedSeats: Math.max(0, currentBooked - (tickets ?? 1)),
+        bookedSeats: Math.max(0, currentBooked - tickets)
       });
     }
-
+    
     return true;
   } catch (error) {
     console.error("Error cancelling booking:", error);
@@ -175,12 +176,12 @@ export async function cancelBooking(bookingId, eventId, tickets) {
   }
 }
 
-// Create or update user profile in Firestore
+// Create or update user profile
 export async function updateUserProfile(userId, userData) {
   try {
     const userRef = doc(db, "users", userId);
     const userDoc = await getDoc(userRef);
-
+    
     if (userDoc.exists()) {
       await updateDoc(userRef, {
         ...userData,
@@ -201,7 +202,7 @@ export async function updateUserProfile(userId, userData) {
   }
 }
 
-// Get user profile from Firestore
+// Get user profile
 export async function getUserProfile(userId) {
   try {
     const q = query(usersCollection, where("userId", "==", userId));

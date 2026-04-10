@@ -1,104 +1,69 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { db } from "@/app/_utils/firebase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EventList from "@/components/EventList";
 import FilterBar from "@/components/FilterBar";
 import SearchBar from "@/components/SearchBar";
 
-// TODO (groupmate): replace with getEvents() from Firestore
-const MOCK_EVENTS = [
-  {
-    id: 1,
-    title: "Future Innovators Summit",
-    category: "Technology",
-    date: "April 18, 2026",
-    time: "10:00 AM",
-    location: "Calgary, AB",
-    totalSeats: 120,
-    bookedSeats: 45,
-    price: 49.99,
-    description: "A technology event focused on innovation, software, and future trends.",
-  },
-  {
-    id: 2,
-    title: "Creative Design Workshop",
-    category: "Design",
-    date: "April 22, 2026",
-    time: "1:00 PM",
-    location: "Edmonton, AB",
-    totalSeats: 40,
-    bookedSeats: 0,
-    price: 0,
-    description: "A hands-on workshop for students interested in design and creativity.",
-  },
-  {
-    id: 3,
-    title: "Business Networking Night",
-    category: "Business",
-    date: "May 2, 2026",
-    time: "6:00 PM",
-    location: "Calgary, AB",
-    totalSeats: 75,
-    bookedSeats: 10,
-    price: 25,
-    description: "Connect with professionals, entrepreneurs, and students in business.",
-  },
-  {
-    id: 4,
-    title: "Community Volunteer Fair",
-    category: "Community",
-    date: "May 10, 2026",
-    time: "9:00 AM",
-    location: "Red Deer, AB",
-    totalSeats: 60,
-    bookedSeats: 60,
-    price: 0,
-    description: "Discover volunteer opportunities and connect with local organizations.",
-  },
-  {
-    id: 5,
-    title: "Student Career Expo",
-    category: "Career",
-    date: "May 15, 2026",
-    time: "10:00 AM",
-    location: "Calgary, AB",
-    totalSeats: 200,
-    bookedSeats: 8,
-    price: 0,
-    description: "Meet employers, learn about opportunities, and explore career paths.",
-  },
-  {
-    id: 6,
-    title: "Music and Arts Festival",
-    category: "Entertainment",
-    date: "May 20, 2026",
-    time: "12:00 PM",
-    location: "Banff, AB",
-    totalSeats: 150,
-    bookedSeats: 30,
-    price: 35,
-    description: "Enjoy live performances, art displays, and a full day of entertainment.",
-  },
-];
-
 export default function EventsPage() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const eventsRef = collection(db, "events");
+        const q = query(eventsRef, orderBy("date", "asc"));
+        const querySnapshot = await getDocs(q);
+        const eventsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setEvents(eventsData);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Failed to load events. Please refresh the page.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
   const filtered = useMemo(() => {
-    return MOCK_EVENTS.filter((e) => {
+    return events.filter((e) => {
       const matchesCategory = category === "All" || e.category === category;
       const q = search.toLowerCase();
       const matchesSearch =
         !q ||
-        e.title.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q) ||
-        e.category.toLowerCase().includes(q);
+        e.title?.toLowerCase().includes(q) ||
+        e.location?.toLowerCase().includes(q) ||
+        e.category?.toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     });
-  }, [search, category]);
+  }, [search, category, events]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
+        <Navbar />
+        <div className="flex min-h-[calc(100vh-140px)] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+            <p className="mt-4 text-slate-600">Loading events...</p>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
@@ -113,8 +78,8 @@ export default function EventsPage() {
             Explore upcoming events
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-600">
-            Discover events, workshops, and community activities. Find the right event
-            and manage your bookings with ease using Eventify.
+            Discover events, workshops, and community activities. Find the right
+            event and manage your bookings with ease using Eventify.
           </p>
         </div>
 
@@ -128,6 +93,12 @@ export default function EventsPage() {
         <p className="mb-6 text-sm text-slate-500">
           {filtered.length} event{filtered.length !== 1 ? "s" : ""} found
         </p>
+
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
+            {error}
+          </div>
+        )}
 
         <EventList events={filtered} />
       </section>

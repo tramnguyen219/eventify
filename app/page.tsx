@@ -65,25 +65,7 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            {user ? (
-              <>
-                <div className="rounded-lg bg-white px-6 py-3 shadow-sm ring-1 ring-slate-200">
-                  <p className="text-sm text-slate-600">
-                    Welcome back,{" "}
-                    <span className="font-semibold text-slate-900">
-                      {user.displayName || user.email?.split('@')[0]}
-                    </span>
-                  </p>
-                </div>
-                <Link
-                  href="/dashboard"
-                  className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
-                >
-                  Go to Dashboard
-                </Link>
-              
-              </>
-            ) : (
+            
               <>
                 <Link
                   href="/signup"
@@ -98,7 +80,7 @@ export default function HomePage() {
                   Browse Events
                 </Link>
               </>
-            )}
+            
           </div>
         </div>
 

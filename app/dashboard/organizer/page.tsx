@@ -5,17 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/app/_utils/firebase";
+import { getOrganizerEvents, deleteEvent } from "@/app/_services/eventService";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 type Event = {
-  id: number;
+  id: string;
   title: string;
   date: string;
   location: string;
   seats: number;
-  bookedSeats?: number;
-  status?: "published" | "draft" | "cancelled";
+  bookedSeats: number;
+  status?: string;
+  venue?: string;
+  description?: string;
+  price?: number;
 };
 
 export default function OrganizerDashboardPage() {
@@ -28,45 +32,30 @@ export default function OrganizerDashboardPage() {
     totalBookings: 0,
     upcomingEvents: 0,
   });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         router.push("/login");
       } else {
         setUser(currentUser);
         
-        // TODO: Fetch events from Firebase/Firestore for this organizer
-        // For now, using mock data that would be user-specific
-        const mockEvents: Event[] = [
-          {
-            id: 1,
-            title: "Future Innovators Summit",
-            date: "April 18, 2026",
-            location: "Calgary, AB",
-            seats: 120,
-            bookedSeats: 45,
-            status: "published",
-          },
-          {
-            id: 2,
-            title: "Creative Design Workshop",
-            date: "April 22, 2026",
-            location: "Edmonton, AB",
-            seats: 40,
-            bookedSeats: 12,
-            status: "published",
-          },
-        ];
-        
-        setEvents(mockEvents);
-        
-        // Calculate stats
-        const totalEvents = mockEvents.length;
-        const totalBookings = mockEvents.reduce((sum, event) => sum + (event.bookedSeats || 0), 0);
-        const upcomingEvents = mockEvents.filter(event => new Date(event.date) > new Date()).length;
-        
-        setStats({ totalEvents, totalBookings, upcomingEvents });
+        // Fetch real events from Firestore
+        try {
+          const userEvents = await getOrganizerEvents(currentUser.uid);
+          const typedEvents = userEvents as Event[];
+          setEvents(typedEvents);
+          
+          // Calculate stats
+          const totalEvents = typedEvents.length;
+          const totalBookings = typedEvents.reduce((sum, event) => sum + (event.bookedSeats || 0), 0);
+          const upcomingEvents = typedEvents.filter(event => new Date(event.date) > new Date()).length;
+          
+          setStats({ totalEvents, totalBookings, upcomingEvents });
+        } catch (error) {
+          console.error("Error fetching events:", error);
+        }
       }
       setLoading(false);
     });
@@ -74,23 +63,27 @@ export default function OrganizerDashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleDeleteEvent = async (eventId: number) => {
+  const handleDeleteEvent = async (eventId: string) => {
     if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
       return;
     }
     
+    setDeletingId(eventId);
+    
     try {
-      // TODO: Delete event from Firebase/Firestore
-      // For now, just update local state
-      setEvents(events.filter(event => event.id !== eventId));
+      await deleteEvent(eventId);
+      const updatedEvents = events.filter(event => event.id !== eventId);
+      setEvents(updatedEvents);
       setStats({
         ...stats,
         totalEvents: stats.totalEvents - 1,
       });
-      console.log("Event deleted successfully");
+      alert("Event deleted successfully!");
     } catch (error) {
       console.error("Error deleting event:", error);
       alert("Failed to delete event. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -120,7 +113,7 @@ export default function OrganizerDashboardPage() {
             </p>
             <h1 className="text-4xl font-bold text-slate-900">Manage your events</h1>
             <p className="mt-3 text-slate-600">
-              Welcome back, {user.displayName || user.email?.split('@')[0]}! View your events, manage details, and create new event listings.
+              Welcome back, {user.displayName || user.email?.split('@')[0]}! You have {events.length} event{events.length !== 1 ? 's' : ''}.
             </p>
           </div>
 
@@ -212,6 +205,14 @@ export default function OrganizerDashboardPage() {
                       </svg>
                       {event.bookedSeats || 0} / {event.seats} seats booked
                     </p>
+                    {event.price && (
+                      <p className="flex items-center gap-2">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ${event.price} per ticket
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-6 flex gap-3">
@@ -229,9 +230,10 @@ export default function OrganizerDashboardPage() {
                     </Link>
                     <button
                       onClick={() => handleDeleteEvent(event.id)}
-                      className="rounded-full border border-red-300 px-5 py-2.5 text-sm font-semibold text-red-600 transition-all hover:bg-red-50"
+                      disabled={deletingId === event.id}
+                      className="rounded-full border border-red-300 px-5 py-2.5 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Delete
+                      {deletingId === event.id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </div>
