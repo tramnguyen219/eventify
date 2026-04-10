@@ -1,308 +1,239 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
-
-type EventFormData = {
-  title: string;
-  category: string;
-  date: string;
-  time: string;
-  location: string;
-  seats: string;
-  description: string;
-};
-
-type EventFormErrors = {
-  title?: string;
-  category?: string;
-  date?: string;
-  time?: string;
-  location?: string;
-  seats?: string;
-  description?: string;
-};
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "@/app/_utils/firebase";
+import { createEvent } from "@/app/_services/eventService";
 
 export default function CreateEventForm() {
-  const [formData, setFormData] = useState<EventFormData>({
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
     title: "",
     category: "",
     date: "",
-    time: "",
     location: "",
-    seats: "",
+    venue: "",
     description: "",
+    seats: "",
+    price: "",
+    imageUrl: "",
   });
 
-  const [errors, setErrors] = useState<EventFormErrors>({});
-  const [submitted, setSubmitted] = useState(false);
-
-  const validateTitle = (title: string) => {
-    if (!title.trim()) return "Event title is required.";
-    if (title.trim().length < 3) return "Event title must be at least 3 characters.";
-    return "";
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const validateCategory = (category: string) => {
-    if (!category.trim()) return "Category is required.";
-    return "";
-  };
-
-  const validateDate = (date: string) => {
-    if (!date) return "Date is required.";
-    return "";
-  };
-
-  const validateTime = (time: string) => {
-    if (!time) return "Time is required.";
-    return "";
-  };
-
-  const validateLocation = (location: string) => {
-    if (!location.trim()) return "Location is required.";
-    if (location.trim().length < 2) return "Location must be at least 2 characters.";
-    return "";
-  };
-
-  const validateSeats = (seats: string) => {
-    if (!seats) return "Number of seats is required.";
-    if (Number(seats) < 1) return "Seats must be at least 1.";
-    return "";
-  };
-
-  const validateDescription = (description: string) => {
-    if (!description.trim()) return "Description is required.";
-    if (description.trim().length < 10) {
-      return "Description must be at least 10 characters.";
-    }
-    return "";
-  };
-
-  const validateForm = () => {
-    const newErrors: EventFormErrors = {
-      title: validateTitle(formData.title),
-      category: validateCategory(formData.category),
-      date: validateDate(formData.date),
-      time: validateTime(formData.time),
-      location: validateLocation(formData.location),
-      seats: validateSeats(formData.seats),
-      description: validateDescription(formData.description),
-    };
-
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(Boolean);
-  };
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { id, value } = e.target;
-    const updatedData = { ...formData, [id]: value };
-    setFormData(updatedData);
-
-    if (submitted) {
-      const newErrors = { ...errors };
-
-      if (id === "title") newErrors.title = validateTitle(value);
-      if (id === "category") newErrors.category = validateCategory(value);
-      if (id === "date") newErrors.date = validateDate(value);
-      if (id === "time") newErrors.time = validateTime(value);
-      if (id === "location") newErrors.location = validateLocation(value);
-      if (id === "seats") newErrors.seats = validateSeats(value);
-      if (id === "description") newErrors.description = validateDescription(value);
-
-      setErrors(newErrors);
-    }
-  };
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError("");
 
-    if (!validateForm()) return;
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
-    console.log("Event created:", formData);
+      const eventData = {
+        title: formData.title,
+        category: formData.category,
+        date: formData.date,
+        location: formData.location,
+        venue: formData.venue,
+        description: formData.description,
+        seats: parseInt(formData.seats),
+        price: parseFloat(formData.price),
+        imageUrl: formData.imageUrl || "",
+        organizerName: user.displayName || user.email?.split('@')[0],
+        bookedSeats: 0,
+        status: "published",
+      };
 
-    setFormData({
-      title: "",
-      category: "",
-      date: "",
-      time: "",
-      location: "",
-      seats: "",
-      description: "",
-    });
-
-    setErrors({});
-    setSubmitted(false);
+      await createEvent(eventData, user.uid);
+      router.push("/dashboard/organizer");
+    } catch (err: any) {
+      console.error("Error creating event:", err);
+      setError(err.message || "Failed to create event. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="rounded-[32px] bg-white p-8 shadow-sm ring-1 ring-slate-200">
-      <div className="mb-8">
-        <p className="mb-3 inline-block rounded-full bg-blue-100 px-4 py-1 text-sm font-medium text-blue-700">
-          Organizer Tools
-        </p>
-        <h1 className="text-3xl font-bold text-slate-900">Create Event</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Fill in the details below to create a new event listing.
-        </p>
-      </div>
+    <>
+      {error && (
+        <div className="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
-      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
         <div>
-          <label htmlFor="title" className="mb-2 block text-sm font-medium text-slate-700">
-            Event Title
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Event Title *
           </label>
           <input
-            id="title"
             type="text"
+            name="title"
             value={formData.title}
             onChange={handleChange}
-            placeholder="Enter event title"
-            className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-              errors.title
-                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-            }`}
+            required
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
-          {errors.title && <p className="mt-2 text-sm text-red-600">{errors.title}</p>}
         </div>
 
-        <div>
-          <label htmlFor="category" className="mb-2 block text-sm font-medium text-slate-700">
-            Category
-          </label>
-          <select
-            id="category"
-            value={formData.category}
-            onChange={handleChange}
-            className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-              errors.category
-                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-            }`}
-          >
-            <option value="">Select a category</option>
-            <option value="Technology">Technology</option>
-            <option value="Business">Business</option>
-            <option value="Design">Design</option>
-            <option value="Community">Community</option>
-            <option value="Career">Career</option>
-            <option value="Entertainment">Entertainment</option>
-          </select>
-          {errors.category && <p className="mt-2 text-sm text-red-600">{errors.category}</p>}
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label htmlFor="date" className="mb-2 block text-sm font-medium text-slate-700">
-              Date
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Category *
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="">Select category</option>
+              <option value="Technology">Technology</option>
+              <option value="Design">Design</option>
+              <option value="Business">Business</option>
+              <option value="Community">Community</option>
+              <option value="Career">Career</option>
+              <option value="Entertainment">Entertainment</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Date *
             </label>
             <input
-              id="date"
               type="date"
+              name="date"
               value={formData.date}
               onChange={handleChange}
-              className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-                errors.date
-                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                  : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-              }`}
+              required
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
-            {errors.date && <p className="mt-2 text-sm text-red-600">{errors.date}</p>}
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Location *
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="City, Province"
+              required
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
           </div>
 
           <div>
-            <label htmlFor="time" className="mb-2 block text-sm font-medium text-slate-700">
-              Time
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Venue *
             </label>
             <input
-              id="time"
-              type="time"
-              value={formData.time}
+              type="text"
+              name="venue"
+              value={formData.venue}
               onChange={handleChange}
-              className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-                errors.time
-                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                  : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-              }`}
+              placeholder="Venue name"
+              required
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
-            {errors.time && <p className="mt-2 text-sm text-red-600">{errors.time}</p>}
           </div>
         </div>
 
         <div>
-          <label htmlFor="location" className="mb-2 block text-sm font-medium text-slate-700">
-            Location
-          </label>
-          <input
-            id="location"
-            type="text"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Enter location"
-            className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-              errors.location
-                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-            }`}
-          />
-          {errors.location && (
-            <p className="mt-2 text-sm text-red-600">{errors.location}</p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="seats" className="mb-2 block text-sm font-medium text-slate-700">
-            Available Seats
-          </label>
-          <input
-            id="seats"
-            type="number"
-            min="1"
-            value={formData.seats}
-            onChange={handleChange}
-            placeholder="Enter number of seats"
-            className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-              errors.seats
-                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-            }`}
-          />
-          {errors.seats && <p className="mt-2 text-sm text-red-600">{errors.seats}</p>}
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="mb-2 block text-sm font-medium text-slate-700"
-          >
-            Description
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Description *
           </label>
           <textarea
-            id="description"
-            rows={5}
+            name="description"
+            rows={4}
             value={formData.description}
             onChange={handleChange}
-            placeholder="Enter event description"
-            className={`w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-2 ${
-              errors.description
-                ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-                : "border-slate-300 focus:border-blue-500 focus:ring-blue-200"
-            }`}
+            required
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
-          {errors.description && (
-            <p className="mt-2 text-sm text-red-600">{errors.description}</p>
-          )}
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
-        >
-          Create Event
-        </button>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Total Seats *
+            </label>
+            <input
+              type="number"
+              name="seats"
+              value={formData.seats}
+              onChange={handleChange}
+              required
+              min="1"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Ticket Price ($) *
+            </label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <p className="mt-1 text-xs text-slate-500">Set 0 for free events</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Image URL (optional)
+          </label>
+          <input
+            type="url"
+            name="imageUrl"
+            value={formData.imageUrl}
+            onChange={handleChange}
+            placeholder="https://example.com/image.jpg"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? "Creating..." : "Create Event"}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex-1 rounded-full border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+        </div>
       </form>
-    </div>
+    </>
   );
 }
