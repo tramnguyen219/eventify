@@ -134,9 +134,12 @@ export default async function EventDetailsPage({
                   Reserve your spot and manage your booking through Eventify.
                 </p>
 
-                <button className="mt-6 w-full rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">
+                <Link
+                  href={`/events/${event.id}/book`}
+                  className="mt-6 block w-full rounded-full bg-blue-600 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
+                >
                   Book Now
-                </button>
+                </Link>
 
                 <button className="mt-3 w-full rounded-full border border-slate-600 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">
                   Save for Later
