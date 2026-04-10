@@ -8,11 +8,14 @@ import { auth } from "@/app/_utils/firebase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+type UserRole = "organizer" | "attendee";
+
 type FormData = {
   fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
+  role: UserRole;
 };
 
 type FormErrors = {
@@ -20,6 +23,7 @@ type FormErrors = {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  role?: string;
   general?: string;
 };
 
@@ -30,6 +34,7 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "attendee",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -77,6 +82,7 @@ export default function SignUpPage() {
         formData.password,
         formData.confirmPassword
       ),
+      role: !formData.role ? "Please select a role." : "",
     };
 
     setErrors(newErrors);
@@ -131,14 +137,16 @@ export default function SignUpPage() {
         formData.password
       );
       
-      // Update user profile with full name
+      // Update user profile with full name and role
       await updateProfile(userCredential.user, {
-        displayName: formData.fullName
+        displayName: formData.fullName,
       });
-      
-      console.log("Signed up user:", userCredential.user);
-      
-      // Redirect to dashboard after successful signup
+
+      // Store role preference in Firestore (groupmate's backend will finalize this)
+      // Role is available as formData.role ("organizer" | "attendee")
+      console.log("Signed up user:", userCredential.user, "Role preference:", formData.role);
+
+      // All users go to the main dashboard — they can access both organizer and attendee features
       router.push("/dashboard");
       
     } catch (error: any) {
@@ -323,6 +331,41 @@ export default function SignUpPage() {
                     <p className="mt-2 text-sm text-red-600">
                       {errors.confirmPassword}
                     </p>
+                  )}
+                </div>
+
+                {/* Role Selector */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    I primarily want to
+                    <span className="ml-1 font-normal text-slate-400">(you can do both)</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: "attendee" })}
+                      className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
+                        formData.role === "attendee"
+                          ? "border-blue-600 bg-blue-50 text-blue-700"
+                          : "border-slate-200 text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      Attend Events
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: "organizer" })}
+                      className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
+                        formData.role === "organizer"
+                          ? "border-blue-600 bg-blue-50 text-blue-700"
+                          : "border-slate-200 text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      Organize Events
+                    </button>
+                  </div>
+                  {errors.role && (
+                    <p className="mt-2 text-sm text-red-600">{errors.role}</p>
                   )}
                 </div>
 

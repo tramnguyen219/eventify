@@ -46,7 +46,7 @@ export default function Navbar() {
           <Link href="/events" className="text-sm font-medium hover:text-blue-600">
             Events
           </Link>
-          
+
           {!loading && (
             <>
               {user ? (
@@ -54,8 +54,8 @@ export default function Navbar() {
                   <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">
                     Dashboard
                   </Link>
-                  
-                  {/* Profile Dropdown Button */}
+
+                  {/* Profile Dropdown */}
                   <div className="relative">
                     <button
                       onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -67,26 +67,26 @@ export default function Navbar() {
                       <span className="text-slate-700">
                         {user.displayName?.split(" ")[0] || "Account"}
                       </span>
-                      <svg className={`h-4 w-4 transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className={`h-4 w-4 transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
-                    
-                    {/* Dropdown Menu */}
+
                     {isProfileOpen && (
                       <>
-                        <div 
-                          className="fixed inset-0 z-40"
-                          onClick={() => setIsProfileOpen(false)}
-                        />
-                        <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white py-2 shadow-lg ring-1 ring-slate-200 z-50">
+                        <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
+                        <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl bg-white py-2 shadow-lg ring-1 ring-slate-200">
                           <div className="border-b border-slate-100 px-4 py-3">
                             <p className="text-sm font-semibold text-slate-900">
                               {user.displayName || "User"}
                             </p>
-                            <p className="text-xs text-slate-500 mt-0.5">{user.email}</p>
+                            <p className="mt-0.5 text-xs text-slate-500">{user.email}</p>
                           </div>
-                          
                           <Link
                             href="/dashboard/attendee"
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50"
@@ -97,7 +97,6 @@ export default function Navbar() {
                             </svg>
                             My Profile
                           </Link>
-                          
                           <Link
                             href="/dashboard/bookings"
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50"
@@ -108,9 +107,7 @@ export default function Navbar() {
                             </svg>
                             My Bookings
                           </Link>
-                          
                           <hr className="my-1 border-slate-100" />
-                          
                           <button
                             onClick={handleLogout}
                             className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
@@ -165,21 +162,13 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="border-t border-slate-200 bg-white p-4 md:hidden">
           <div className="flex flex-col space-y-3">
-            <Link 
-              href="/" 
-              className="text-sm font-medium hover:text-blue-600"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link href="/" className="text-sm font-medium hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>
               Home
             </Link>
-            <Link 
-              href="/events" 
-              className="text-sm font-medium hover:text-blue-600"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link href="/events" className="text-sm font-medium hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>
               Events
             </Link>
-            
+
             {!loading && (
               <>
                 {user ? (
@@ -188,32 +177,17 @@ export default function Navbar() {
                       <p className="text-xs text-slate-500">Signed in as</p>
                       <p className="text-sm font-medium text-slate-900">{user.email}</p>
                     </div>
-                    <Link 
-                      href="/dashboard" 
-                      className="text-sm font-medium hover:text-blue-600"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>
                       Dashboard
                     </Link>
-                    <Link 
-                      href="/dashboard/attendee" 
-                      className="text-sm font-medium hover:text-blue-600"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/dashboard/attendee" className="text-sm font-medium hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>
                       My Profile
                     </Link>
-                    <Link 
-                      href="/dashboard/bookings" 
-                      className="text-sm font-medium hover:text-blue-600"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/dashboard/bookings" className="text-sm font-medium hover:text-blue-600" onClick={() => setIsMenuOpen(false)}>
                       My Bookings
                     </Link>
                     <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMenuOpen(false);
-                      }}
+                      onClick={() => { handleLogout(); setIsMenuOpen(false); }}
                       className="text-left text-sm font-medium text-red-600 hover:text-red-700"
                     >
                       Sign Out
@@ -221,15 +195,15 @@ export default function Navbar() {
                   </>
                 ) : (
                   <>
-                    <Link 
-                      href="/login" 
+                    <Link
+                      href="/login"
                       className="block rounded-full border-2 border-blue-600 px-4 py-2 text-center text-sm font-semibold text-blue-600 transition-all hover:bg-blue-50"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Log In
                     </Link>
-                    <Link 
-                      href="/signup" 
+                    <Link
+                      href="/signup"
                       className="block rounded-full bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-blue-700"
                       onClick={() => setIsMenuOpen(false)}
                     >
