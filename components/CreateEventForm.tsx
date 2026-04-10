@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { auth } from "@/app/_utils/firebase";
+import { createEvent } from "@/app/_services/eventService";
 
 type EventFormData = {
   title: string;
@@ -138,21 +139,24 @@ export default function CreateEventForm() {
     try {
       let imageUrl: string | null = null;
 
+      const user = auth.currentUser;
+
       if (imageFile) {
-        const user = auth.currentUser;
         const path = `event-posters/${user?.uid ?? "unknown"}/${Date.now()}-${imageFile.name}`;
         const storageRef = ref(storage, path);
         await uploadBytes(storageRef, imageFile);
         imageUrl = await getDownloadURL(storageRef);
       }
 
-      // TODO (groupmate): save to Firestore with createEvent({...formData, imageUrl})
-      console.log("Event ready to save:", {
-        ...formData,
-        seats: Number(formData.seats),
-        price: Number(formData.price),
-        imageUrl,
-      });
+      await createEvent(
+        {
+          ...formData,
+          seats: Number(formData.seats),
+          price: Number(formData.price),
+          imageUrl: imageUrl ?? null,
+        },
+        user?.uid
+      );
 
       setSuccessMessage("Event created successfully!");
       setFormData({
