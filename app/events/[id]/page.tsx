@@ -1,7 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BookingButton from "@/components/BookingButton";
+import { getCategoryImage } from "@/lib/categoryImages";
 
+// TODO (groupmate): replace with getEventById(id) from Firestore
 const events = [
   {
     id: "1",
@@ -10,9 +14,12 @@ const events = [
     date: "April 18, 2026",
     time: "10:00 AM",
     location: "Calgary, AB",
-    seats: 120,
+    totalSeats: 120,
+    bookedSeats: 45,
+    price: 49.99,
     description:
       "A technology event focused on innovation, software, and future trends. This event brings together students, professionals, and industry speakers for a full day of learning and networking.",
+    imageUrl: undefined as string | undefined,
   },
   {
     id: "2",
@@ -21,9 +28,12 @@ const events = [
     date: "April 22, 2026",
     time: "1:00 PM",
     location: "Edmonton, AB",
-    seats: 40,
+    totalSeats: 40,
+    bookedSeats: 0,
+    price: 0,
     description:
       "A hands-on workshop for students interested in design, creativity, and digital experiences.",
+    imageUrl: undefined as string | undefined,
   },
   {
     id: "3",
@@ -32,9 +42,12 @@ const events = [
     date: "May 2, 2026",
     time: "6:00 PM",
     location: "Calgary, AB",
-    seats: 75,
+    totalSeats: 75,
+    bookedSeats: 10,
+    price: 25,
     description:
       "Connect with professionals, entrepreneurs, and students in business through guided networking and speaker sessions.",
+    imageUrl: undefined as string | undefined,
   },
 ];
 
@@ -69,6 +82,9 @@ export default async function EventDetailsPage({
     );
   }
 
+  const available = event.totalSeats - event.bookedSeats;
+  const isSoldOut = available <= 0;
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
       <Navbar />
@@ -82,7 +98,18 @@ export default async function EventDetailsPage({
         </Link>
 
         <div className="overflow-hidden rounded-[32px] bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="h-64 bg-gradient-to-r from-blue-600 to-slate-900" />
+          {/* Poster image — uses event-specific image, or falls back to category image */}
+          <div className="relative h-72 w-full bg-gradient-to-r from-blue-600 to-slate-900">
+            <Image
+              src={event.imageUrl ?? getCategoryImage(event.category)}
+              alt={event.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1200px) 100vw, 1200px"
+              priority
+            />
+            <div className="absolute inset-0 bg-black/20" />
+          </div>
 
           <div className="grid gap-10 p-8 md:grid-cols-[2fr_1fr]">
             <div>
@@ -97,31 +124,22 @@ export default async function EventDetailsPage({
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl bg-slate-50 p-5">
                   <p className="text-sm font-medium text-slate-500">Date</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {event.date}
-                  </p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">{event.date}</p>
                 </div>
-
                 <div className="rounded-2xl bg-slate-50 p-5">
                   <p className="text-sm font-medium text-slate-500">Time</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {event.time}
-                  </p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">{event.time}</p>
                 </div>
-
                 <div className="rounded-2xl bg-slate-50 p-5">
                   <p className="text-sm font-medium text-slate-500">Location</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {event.location}
-                  </p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">{event.location}</p>
                 </div>
-
                 <div className="rounded-2xl bg-slate-50 p-5">
-                  <p className="text-sm font-medium text-slate-500">
-                    Available Seats
-                  </p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {event.seats}
+                  <p className="text-sm font-medium text-slate-500">Available Seats</p>
+                  <p
+                    className={`mt-2 text-lg font-semibold ${isSoldOut ? "text-red-600" : "text-slate-900"}`}
+                  >
+                    {isSoldOut ? "Sold Out" : `${available} of ${event.totalSeats}`}
                   </p>
                 </div>
               </div>
@@ -130,26 +148,20 @@ export default async function EventDetailsPage({
             <div>
               <div className="rounded-[28px] bg-slate-900 p-6 text-white shadow-lg">
                 <h2 className="text-2xl font-bold">Book this event</h2>
+                <p className="mt-2 text-2xl font-bold text-blue-400">
+                  {event.price === 0 ? "Free" : `$${event.price.toFixed(2)}`}
+                </p>
                 <p className="mt-3 text-sm leading-6 text-slate-300">
                   Reserve your spot and manage your booking through Eventify.
                 </p>
-
-                <Link
-                  href={`/events/${event.id}/book`}
-                  className="mt-6 block w-full rounded-full bg-blue-600 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Book Now
-                </Link>
-
+                <BookingButton eventId={event.id} disabled={isSoldOut} />
                 <button className="mt-3 w-full rounded-full border border-slate-600 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">
                   Save for Later
                 </button>
               </div>
 
               <div className="mt-6 rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Event Location
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900">Event Location</h3>
                 <div className="mt-4 flex h-40 items-center justify-center rounded-2xl bg-slate-100 text-sm text-slate-500">
                   Map preview placeholder
                 </div>

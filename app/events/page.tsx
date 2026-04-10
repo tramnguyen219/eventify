@@ -1,15 +1,24 @@
-import Link from "next/link";
+"use client";
+
+import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import EventList from "@/components/EventList";
+import FilterBar from "@/components/FilterBar";
+import SearchBar from "@/components/SearchBar";
 
-const events = [
+// TODO (groupmate): replace with getEvents() from Firestore
+const MOCK_EVENTS = [
   {
     id: 1,
     title: "Future Innovators Summit",
     category: "Technology",
     date: "April 18, 2026",
+    time: "10:00 AM",
     location: "Calgary, AB",
-    seats: 120,
+    totalSeats: 120,
+    bookedSeats: 45,
+    price: 49.99,
     description: "A technology event focused on innovation, software, and future trends.",
   },
   {
@@ -17,8 +26,11 @@ const events = [
     title: "Creative Design Workshop",
     category: "Design",
     date: "April 22, 2026",
+    time: "1:00 PM",
     location: "Edmonton, AB",
-    seats: 40,
+    totalSeats: 40,
+    bookedSeats: 0,
+    price: 0,
     description: "A hands-on workshop for students interested in design and creativity.",
   },
   {
@@ -26,8 +38,11 @@ const events = [
     title: "Business Networking Night",
     category: "Business",
     date: "May 2, 2026",
+    time: "6:00 PM",
     location: "Calgary, AB",
-    seats: 75,
+    totalSeats: 75,
+    bookedSeats: 10,
+    price: 25,
     description: "Connect with professionals, entrepreneurs, and students in business.",
   },
   {
@@ -35,8 +50,11 @@ const events = [
     title: "Community Volunteer Fair",
     category: "Community",
     date: "May 10, 2026",
+    time: "9:00 AM",
     location: "Red Deer, AB",
-    seats: 60,
+    totalSeats: 60,
+    bookedSeats: 60,
+    price: 0,
     description: "Discover volunteer opportunities and connect with local organizations.",
   },
   {
@@ -44,8 +62,11 @@ const events = [
     title: "Student Career Expo",
     category: "Career",
     date: "May 15, 2026",
+    time: "10:00 AM",
     location: "Calgary, AB",
-    seats: 200,
+    totalSeats: 200,
+    bookedSeats: 8,
+    price: 0,
     description: "Meet employers, learn about opportunities, and explore career paths.",
   },
   {
@@ -53,13 +74,32 @@ const events = [
     title: "Music and Arts Festival",
     category: "Entertainment",
     date: "May 20, 2026",
+    time: "12:00 PM",
     location: "Banff, AB",
-    seats: 150,
+    totalSeats: 150,
+    bookedSeats: 30,
+    price: 35,
     description: "Enjoy live performances, art displays, and a full day of entertainment.",
   },
 ];
 
 export default function EventsPage() {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+
+  const filtered = useMemo(() => {
+    return MOCK_EVENTS.filter((e) => {
+      const matchesCategory = category === "All" || e.category === category;
+      const q = search.toLowerCase();
+      const matchesSearch =
+        !q ||
+        e.title.toLowerCase().includes(q) ||
+        e.location.toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [search, category]);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-800">
       <Navbar />
@@ -78,82 +118,18 @@ export default function EventsPage() {
           </p>
         </div>
 
-        <div className="mb-8 grid gap-4 rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200 md:grid-cols-3">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Search
-            </label>
-            <input
-              type="text"
-              placeholder="Search events"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Category
-            </label>
-            <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-              <option>All Categories</option>
-              <option>Technology</option>
-              <option>Design</option>
-              <option>Business</option>
-              <option>Community</option>
-              <option>Career</option>
-              <option>Entertainment</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Location
-            </label>
-            <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-              <option>All Locations</option>
-              <option>Calgary, AB</option>
-              <option>Edmonton, AB</option>
-              <option>Red Deer, AB</option>
-              <option>Banff, AB</option>
-            </select>
-          </div>
+        {/* Search + Filter */}
+        <div className="mb-8 space-y-4 rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <SearchBar value={search} onChange={setSearch} />
+          <FilterBar selected={category} onChange={setCategory} />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {events.map((event) => (
-            <article
-              key={event.id}
-              className="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="h-44 bg-gradient-to-r from-blue-600 to-slate-900" />
+        {/* Results count */}
+        <p className="mb-6 text-sm text-slate-500">
+          {filtered.length} event{filtered.length !== 1 ? "s" : ""} found
+        </p>
 
-              <div className="p-6">
-                <p className="mb-2 text-sm font-medium text-blue-600">{event.category}</p>
-                <h2 className="text-2xl font-bold text-slate-900">{event.title}</h2>
-                <p className="mt-3 text-sm text-slate-600">{event.description}</p>
-
-                <div className="mt-5 space-y-2 text-sm text-slate-500">
-                  <p>{event.date}</p>
-                  <p>{event.location}</p>
-                  <p>{event.seats} seats available</p>
-                </div>
-
-                <div className="mt-6 flex gap-3">
-                  <Link
-                    href={`/events/${event.id}`}
-                    className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    View Details
-                  </Link>
-
-                  <button className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                    Book Now
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+        <EventList events={filtered} />
       </section>
 
       <Footer />
