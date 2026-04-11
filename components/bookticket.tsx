@@ -95,6 +95,22 @@ export default function BookTicket({ eventId }: BookTicketProps) {
         user.uid,
         eventId
       );
+
+      // Send confirmation email — non-blocking
+      fetch("/api/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attendeeName: `${formData.firstName} ${formData.lastName}`,
+          attendeeEmail: formData.email,
+          eventTitle: event.title,
+          eventDate: event.date,
+          location: event.location,
+          tickets: formData.tickets,
+          totalAmount: totalPrice,
+        }),
+      }).catch((err) => console.error("Email send failed:", err));
+
       setConfirmed(true);
       window.scrollTo(0, 0);
     } catch (err) {
@@ -152,7 +168,8 @@ export default function BookTicket({ eventId }: BookTicketProps) {
         </div>
         <h1 className="text-3xl font-bold text-slate-900">Ticket Booked!</h1>
         <p className="mt-3 text-slate-500">
-          A confirmation will be sent to <span className="font-semibold text-slate-800">{formData.email}</span>.
+          A confirmation email has been sent to{" "}
+          <span className="font-semibold text-slate-800">{formData.email}</span>.
         </p>
 
         <div className="mx-auto mt-8 rounded-[24px] bg-white p-6 text-left shadow-sm ring-1 ring-slate-200">
