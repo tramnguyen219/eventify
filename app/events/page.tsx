@@ -305,7 +305,7 @@ export default function EventsPage() {
                       </Link>
 
                       <Link
-                        href={`/events/${event.id}?book=true`}
+                        href={isSoldOut ? "#" : `/events/${event.id}/book`}
                         className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
                           isSoldOut
                             ? "cursor-not-allowed bg-slate-200 text-slate-500"
