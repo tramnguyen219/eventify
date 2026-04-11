@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/app/_utils/firebase";
+import { getCategoryImage } from "@/lib/categoryImages";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -241,6 +243,13 @@ export default function EventsPage() {
                   className="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="relative h-44 bg-gradient-to-r from-blue-600 to-slate-900">
+                    <Image
+                      src={event.imageUrl || getCategoryImage(event.category)}
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
                     {isSoldOut && (
                       <div className="absolute right-4 top-4 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
                         Sold Out

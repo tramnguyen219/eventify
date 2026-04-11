@@ -40,10 +40,10 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-6 md:flex">
-          <Link href="/" className="text-sm font-medium hover:text-blue-600">
+          <Link href="/" className="text-sm font-medium text-slate-700 hover:text-blue-600">
             Home
           </Link>
-          <Link href="/events" className="text-sm font-medium hover:text-blue-600">
+          <Link href="/events" className="text-sm font-medium text-slate-700 hover:text-blue-600">
             Events
           </Link>
           
@@ -51,7 +51,7 @@ export default function Navbar() {
             <>
               {user ? (
                 <>
-                  <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">
+                  <Link href="/dashboard" className="text-sm font-medium text-slate-700 hover:text-blue-600">
                     Dashboard
                   </Link>
                   

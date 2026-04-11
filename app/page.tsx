@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/app/_utils/firebase";
+import { getAllEvents } from "@/app/_services/eventService";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -12,6 +13,7 @@ export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [upcomingEvent, setUpcomingEvent] = useState<any>(null);
 
   useEffect(() => {
     // Listen for authentication state changes
@@ -19,6 +21,12 @@ export default function HomePage() {
       setUser(currentUser);
       setLoading(false);
     });
+
+    getAllEvents()
+      .then((events: any[]) => {
+        if (events.length > 0) setUpcomingEvent(events[0]);
+      })
+      .catch(() => {});
 
     return () => unsubscribe();
   }, []);
@@ -87,19 +95,29 @@ export default function HomePage() {
         <div className="grid gap-4">
           <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
             <h2 className="mb-4 text-xl font-semibold text-slate-900">Upcoming Event</h2>
-            <div className="rounded-2xl bg-slate-100 p-5">
-              <p className="text-sm font-medium text-blue-600">Tech Conference</p>
-              <h3 className="mt-2 text-2xl font-bold text-slate-900">Future Innovators Summit</h3>
-              <p className="mt-3 text-sm text-slate-600">
-                April 18, 2026 • Calgary • 120 seats available
-              </p>
-              <Link
-                href="/events/1"
-                className="mt-5 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
-              >
-                View Details
-              </Link>
-            </div>
+            {upcomingEvent ? (
+              <div className="rounded-2xl bg-slate-100 p-5">
+                <p className="text-sm font-medium text-blue-600">{upcomingEvent.category}</p>
+                <h3 className="mt-2 text-2xl font-bold text-slate-900">{upcomingEvent.title}</h3>
+                <p className="mt-3 text-sm text-slate-600">
+                  {upcomingEvent.date} • {upcomingEvent.location} •{" "}
+                  {(upcomingEvent.seats ?? upcomingEvent.totalSeats ?? 0) - (upcomingEvent.bookedSeats || 0)} seats available
+                </p>
+                <Link
+                  href={`/events/${upcomingEvent.id}`}
+                  className="mt-5 inline-block rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  View Details
+                </Link>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-slate-100 p-5">
+                <p className="text-sm text-slate-500">No upcoming events yet.</p>
+                <Link href="/events" className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline">
+                  Browse all events →
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
