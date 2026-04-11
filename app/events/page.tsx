@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/app/_utils/firebase";
+import { getCategoryImage } from "@/lib/categoryImages";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AllEventsMap from "@/components/AllEventsMap";
@@ -22,24 +24,22 @@ type Event = {
   organizerName?: string;
 };
 
-// Static categories from your original code
 const CATEGORIES = [
   "All Categories",
   "Technology",
-  "Design", 
+  "Design",
   "Business",
   "Community",
   "Career",
-  "Entertainment"
+  "Entertainment",
 ];
 
-// Static locations from your original code
 const LOCATIONS = [
   "All Locations",
   "Calgary, AB",
   "Edmonton, AB",
   "Red Deer, AB",
-  "Banff, AB"
+  "Banff, AB",
 ];
 
 export default function EventsPage() {
@@ -48,8 +48,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-  
-  // Filter states
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
@@ -68,12 +67,10 @@ export default function EventsPage() {
       const eventsRef = collection(db, "events");
       const q = query(eventsRef, orderBy("date", "asc"));
       const querySnapshot = await getDocs(q);
-      
-      const eventsData = querySnapshot.docs.map(doc => ({
+      const eventsData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as Event[];
-      
       setEvents(eventsData);
       setFilteredEvents(eventsData);
     } catch (err) {
@@ -86,26 +83,20 @@ export default function EventsPage() {
 
   const filterEvents = () => {
     let filtered = [...events];
-    
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(event => 
-        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.category.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
-    // Category filter - using static categories
-    if (selectedCategory && selectedCategory !== "All Categories") {
-      filtered = filtered.filter(event => event.category === selectedCategory);
+    if (selectedCategory !== "All Categories") {
+      filtered = filtered.filter((event) => event.category === selectedCategory);
     }
-    
-    // Location filter - using static locations
-    if (selectedLocation && selectedLocation !== "All Locations") {
-      filtered = filtered.filter(event => event.location === selectedLocation);
+    if (selectedLocation !== "All Locations") {
+      filtered = filtered.filter((event) => event.location === selectedLocation);
     }
-    
     setFilteredEvents(filtered);
   };
 
@@ -119,7 +110,7 @@ export default function EventsPage() {
         <Navbar />
         <div className="flex min-h-[calc(100vh-140px)] items-center justify-center">
           <div className="text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
             <p className="mt-4 text-slate-600">Loading events...</p>
           </div>
         </div>
@@ -141,18 +132,18 @@ export default function EventsPage() {
             Explore upcoming events
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-600">
-            Discover events, workshops, and community activities. Find the right event
-            and manage your bookings with ease using Eventify.
+            Discover events, workshops, and community activities. Find the right
+            event and manage your bookings with ease using Eventify.
           </p>
         </div>
 
-        {/* View Toggle Buttons */}
+        {/* View Toggle */}
         <div className="mb-4 flex justify-end gap-2">
           <button
             onClick={() => setViewMode("list")}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-              viewMode === "list" 
-                ? "bg-blue-600 text-white shadow-md" 
+              viewMode === "list"
+                ? "bg-blue-600 text-white shadow-md"
                 : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             }`}
           >
@@ -166,8 +157,8 @@ export default function EventsPage() {
           <button
             onClick={() => setViewMode("map")}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-              viewMode === "map" 
-                ? "bg-blue-600 text-white shadow-md" 
+              viewMode === "map"
+                ? "bg-blue-600 text-white shadow-md"
                 : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             }`}
           >
@@ -183,9 +174,7 @@ export default function EventsPage() {
         {/* Filters */}
         <div className="mb-8 grid gap-4 rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200 md:grid-cols-3">
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Search
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Search</label>
             <input
               type="text"
               placeholder="Search events..."
@@ -194,55 +183,40 @@ export default function EventsPage() {
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
-
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Category
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
-              {CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
-
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Location
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Location</label>
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
-              {LOCATIONS.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
+              {LOCATIONS.map((l) => (
+                <option key={l} value={l}>{l}</option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Results count */}
         <div className="mb-6 text-sm text-slate-500">
-          Found {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
+          Found {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}
         </div>
 
-        {/* Error message */}
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-            {error}
-          </div>
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>
         )}
 
-        {/* Conditional Rendering: Map View or List View - FIXED to prevent map reload */}
         {filteredEvents.length === 0 ? (
           <div className="rounded-[28px] bg-white p-12 text-center shadow-sm ring-1 ring-slate-200">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
@@ -251,15 +225,9 @@ export default function EventsPage() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-slate-900">No events found</h3>
-            <p className="mt-2 text-slate-600">
-              Try adjusting your search or filter criteria.
-            </p>
+            <p className="mt-2 text-slate-600">Try adjusting your search or filter criteria.</p>
             <button
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedCategory("All Categories");
-                setSelectedLocation("All Locations");
-              }}
+              onClick={() => { setSearchTerm(""); setSelectedCategory("All Categories"); setSelectedLocation("All Locations"); }}
               className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white hover:bg-blue-700"
             >
               Clear Filters
@@ -267,37 +235,43 @@ export default function EventsPage() {
           </div>
         ) : (
           <>
-            {/* Map View - Always in DOM but hidden when not active */}
+            {/* Map View */}
             <div className={viewMode === "map" ? "block" : "hidden"}>
-              <div className="rounded-2xl overflow-hidden shadow-sm ring-1 ring-slate-200">
-                <AllEventsMap events={filteredEvents.map(event => ({ ...event, venue: event.venue || event.location }))} />
+              <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-200">
+                <AllEventsMap events={filteredEvents.map((event) => ({ ...event, venue: event.venue || event.location }))} />
               </div>
             </div>
 
-            {/* List View - Always in DOM but hidden when not active */}
+            {/* List View */}
             <div className={viewMode === "list" ? "block" : "hidden"}>
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {filteredEvents.map((event) => {
                   const availableSeats = getAvailableSeats(event);
                   const isSoldOut = availableSeats <= 0;
-                  
+
                   return (
                     <article
                       key={event.id}
                       className="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-lg"
                     >
                       <div className="relative h-44 bg-gradient-to-r from-blue-600 to-slate-900">
+                        <Image
+                          src={(event as any).imageUrl || getCategoryImage(event.category)}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
                         {isSoldOut && (
                           <div className="absolute right-4 top-4 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
                             Sold Out
                           </div>
                         )}
-                        {event.price && event.price > 0 && (
+                        {event.price && event.price > 0 ? (
                           <div className="absolute left-4 top-4 rounded-full bg-green-600 px-3 py-1 text-xs font-semibold text-white">
                             ${event.price}
                           </div>
-                        )}
-                        {(!event.price || event.price === 0) && (
+                        ) : (
                           <div className="absolute left-4 top-4 rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white">
                             Free
                           </div>
@@ -307,9 +281,7 @@ export default function EventsPage() {
                       <div className="p-6">
                         <p className="mb-2 text-sm font-medium text-blue-600">{event.category}</p>
                         <h2 className="text-2xl font-bold text-slate-900">{event.title}</h2>
-                        <p className="mt-3 text-sm text-slate-600 line-clamp-2">
-                          {event.description}
-                        </p>
+                        <p className="mt-3 text-sm text-slate-600 line-clamp-2">{event.description}</p>
 
                         <div className="mt-5 space-y-2 text-sm text-slate-500">
                           <p className="flex items-center gap-2">
@@ -340,20 +312,14 @@ export default function EventsPage() {
                           >
                             View Details
                           </Link>
-
                           <Link
-                            href={`/events/${event.id}?book=true`}
+                            href={isSoldOut ? "#" : `/events/${event.id}/book`}
                             className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
                               isSoldOut
                                 ? "cursor-not-allowed bg-slate-200 text-slate-500"
                                 : "border border-slate-300 text-slate-700 hover:bg-slate-100"
                             }`}
-                            onClick={(e) => {
-                              if (isSoldOut) {
-                                e.preventDefault();
-                                alert("This event is sold out!");
-                              }
-                            }}
+                            onClick={(e) => { if (isSoldOut) e.preventDefault(); }}
                           >
                             Book Now
                           </Link>
